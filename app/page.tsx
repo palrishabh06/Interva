@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   ArrowRight,
   BrainCircuit,
@@ -15,6 +14,7 @@ import {
   Target,
   XCircle,
 } from "lucide-react";
+import { useState } from "react";
 
 const features = [
   [
@@ -299,7 +299,7 @@ const [generatingReport, setGeneratingReport] =
   }
 
 async function generateReport(
-  finalEvaluation?: AnswerEvaluation
+  finalEvaluation?: undefined
 ) {
   setGeneratingReport(true);
   setError("");
@@ -630,7 +630,7 @@ async function generateReport(
     </p>
 
     <div className="mt-3 text-6xl font-semibold tracking-tight">
-      {report.overallScore.toFixed(1)}
+      {report!.overallScore.toFixed(1)}
       <span className="text-2xl text-zinc-600">
         /10
       </span>
@@ -645,17 +645,17 @@ async function generateReport(
   <div className="grid gap-4 sm:grid-cols-3">
     <ScoreCard
       label="Technical"
-      value={report.technicalScore}
+      value={report!.technicalScore}
     />
 
     <ScoreCard
       label="Completeness"
-      value={report.completenessScore}
+      value={report!.completenessScore}
     />
 
     <ScoreCard
       label="Communication"
-      value={report.communicationScore}
+      value={report!.communicationScore}
     />
   </div>
 
@@ -671,7 +671,7 @@ async function generateReport(
       </div>
 
       <ul className="mt-5 space-y-4">
-        {report.strengths.map((item, i) => (
+        {report!.strengths.map((item, i) => (
           <li
             key={i}
             className="flex gap-3 text-sm leading-6 text-zinc-400"
@@ -693,7 +693,7 @@ async function generateReport(
       </div>
 
       <ul className="mt-5 space-y-4">
-        {report.areasToImprove.map(
+        {report!.areasToImprove.map(
           (item, i) => (
             <li
               key={i}
@@ -719,7 +719,7 @@ async function generateReport(
     </div>
 
     <div className="mt-5 grid gap-3 md:grid-cols-2">
-      {report.recommendedPractice.map(
+      {report!.recommendedPractice.map(
         (item, i) => (
           <div
             key={i}
@@ -751,7 +751,7 @@ async function generateReport(
     </div>
 
     <p className="mt-4 text-sm leading-7 text-zinc-400">
-      {report.summary}
+      {report!.summary}
     </p>
   </div>
 
