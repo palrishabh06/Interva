@@ -74,10 +74,14 @@ type InterviewReport = {
 export default function Home() {
   const [started, setStarted] = useState(false);
 
-  const [role, setRole] = useState("Software Engineer");
-  const [difficulty, setDifficulty] = useState("Medium");
+  const [role, setRole] =
+    useState("Software Engineer");
+
+  const [difficulty, setDifficulty] =
+    useState("Medium");
 
   const [index, setIndex] = useState(0);
+
   const [answer, setAnswer] = useState("");
 
   const [question, setQuestion] =
@@ -85,15 +89,15 @@ export default function Home() {
 
   const [evaluation, setEvaluation] =
     useState<AnswerEvaluation | null>(null);
-  
+
   const [finalEvaluation, setFinalEvaluation] =
-  useState<AnswerEvaluation | null>(null);
+    useState<AnswerEvaluation | null>(null);
 
   const [report, setReport] =
-  useState<InterviewReport | null>(null);
+    useState<InterviewReport | null>(null);
 
-const [generatingReport, setGeneratingReport] =
-  useState(false);
+  const [generatingReport, setGeneratingReport] =
+    useState(false);
 
   const [previousQuestions, setPreviousQuestions] =
     useState<string[]>([]);
@@ -121,7 +125,9 @@ const [generatingReport, setGeneratingReport] =
 
     try {
       const category =
-        categories[questionIndex % categories.length];
+        categories[
+          questionIndex % categories.length
+        ];
 
       const response = await fetch(
         "/api/interview/question",
@@ -137,7 +143,10 @@ const [generatingReport, setGeneratingReport] =
             previousQuestions,
             previousAnswers,
             evaluations: evaluationContext
-              ? [...evaluations, evaluationContext]
+              ? [
+                  ...evaluations,
+                  evaluationContext,
+                ]
               : evaluations,
           }),
         }
@@ -178,6 +187,9 @@ const [generatingReport, setGeneratingReport] =
     setAnswer("");
     setQuestion(null);
     setEvaluation(null);
+    setFinalEvaluation(null);
+    setReport(null);
+    setGeneratingReport(false);
     setPreviousQuestions([]);
     setPreviousAnswers([]);
     setEvaluations([]);
@@ -230,7 +242,11 @@ const [generatingReport, setGeneratingReport] =
   }
 
   async function submitAnswer() {
-    if (!answer.trim() || !question || evaluating) {
+    if (
+      !answer.trim() ||
+      !question ||
+      evaluating
+    ) {
       return;
     }
 
@@ -281,10 +297,10 @@ const [generatingReport, setGeneratingReport] =
         ...previous,
         result,
       ]);
+
       if (index === categories.length - 1) {
-  setFinalEvaluation(result);
-}
-      
+        setFinalEvaluation(result);
+      }
     } catch (err) {
       console.error(err);
 
@@ -298,75 +314,81 @@ const [generatingReport, setGeneratingReport] =
     }
   }
 
-async function generateReport(
-  finalEvaluation?: undefined
-) {
-  setGeneratingReport(true);
-  setError("");
+  async function generateReport(
+    finalEvaluation?: AnswerEvaluation
+  ) {
+    setGeneratingReport(true);
+    setError("");
 
-  try {
-    const finalEvaluations = finalEvaluation
-      ? [...evaluations, finalEvaluation]
-      : evaluations;
+    try {
+      const finalEvaluations =
+        finalEvaluation
+          ? [...evaluations, finalEvaluation]
+          : evaluations;
 
-    const response = await fetch(
-      "/api/interview/report",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          role,
-          difficulty,
-          questions: previousQuestions,
-          answers: previousAnswers,
-          evaluations: finalEvaluations,
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.details ||
-          data.error ||
-          "Failed to generate interview report"
+      const response = await fetch(
+        "/api/interview/report",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            role,
+            difficulty,
+            questions: previousQuestions,
+            answers: previousAnswers,
+            evaluations: finalEvaluations,
+          }),
+        }
       );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.details ||
+            data.error ||
+            "Failed to generate interview report"
+        );
+      }
+
+      setReport(data as InterviewReport);
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to generate your final report."
+      );
+    } finally {
+      setGeneratingReport(false);
     }
-
-    setReport(data);
-  } catch (err) {
-    console.error(err);
-
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Unable to generate your final report."
-    );
-  } finally {
-    setGeneratingReport(false);
   }
-}
 
   async function continueInterview() {
-  const nextIndex = index + 1;
+    const nextIndex = index + 1;
 
-  if (nextIndex >= categories.length) {
-    await generateReport();
-    return;
+    if (nextIndex >= categories.length) {
+      await generateReport(
+        finalEvaluation ??
+          evaluation ??
+          undefined
+      );
+
+      return;
+    }
+
+    setAnswer("");
+    setEvaluation(null);
+    setIndex(nextIndex);
+
+    await generateQuestion(
+      nextIndex,
+      evaluation ?? undefined
+    );
   }
-
-  setAnswer("");
-  setEvaluation(null);
-  setIndex(nextIndex);
-
-  await generateQuestion(
-    nextIndex,
-    evaluation
-  );
-}
 
   const interviewComplete =
     index >= categories.length - 1 &&
@@ -376,9 +398,13 @@ async function generateReport(
     return (
       <main className="min-h-screen bg-[#08090b] px-5 py-8 md:px-10">
         <div className="mx-auto max-w-5xl">
+          {/* Header */}
           <header className="mb-8 flex items-center justify-between">
             <div className="text-xl font-semibold tracking-tight">
-              interva<span className="text-zinc-500">.</span>
+              interva
+              <span className="text-zinc-500">
+                .
+              </span>
             </div>
 
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-zinc-400">
@@ -387,15 +413,21 @@ async function generateReport(
             </div>
           </header>
 
+          {/* Progress */}
           <div className="mb-5 flex items-center justify-between text-sm text-zinc-500">
             <span>
-              Question {Math.min(index + 1, categories.length)} of{" "}
-              {categories.length}
+              Question{" "}
+              {Math.min(
+                index + 1,
+                categories.length
+              )}{" "}
+              of {categories.length}
             </span>
 
             {question && (
               <span>
-                {question.category} · {question.difficulty}
+                {question.category} ·{" "}
+                {question.difficulty}
               </span>
             )}
           </div>
@@ -413,12 +445,14 @@ async function generateReport(
             />
           </div>
 
+          {/* Error */}
           {error && (
             <div className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-300">
               {error}
             </div>
           )}
 
+          {/* Interview card */}
           <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.035] p-7 md:p-10">
             {loadingQuestion && !question ? (
               <div className="py-16 text-center">
@@ -428,11 +462,13 @@ async function generateReport(
                 />
 
                 <p className="mt-5 text-sm text-zinc-500">
-                  Interva is preparing your next question...
+                  Interva is preparing your next
+                  question...
                 </p>
               </div>
             ) : question ? (
               <>
+                {/* Question */}
                 <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-black">
                   <Code2 size={22} />
                 </div>
@@ -445,12 +481,15 @@ async function generateReport(
                   {question.question}
                 </h1>
 
+                {/* Answer form */}
                 {!evaluation && (
                   <>
                     <textarea
                       value={answer}
                       onChange={(e) =>
-                        setAnswer(e.target.value)
+                        setAnswer(
+                          e.target.value
+                        )
                       }
                       placeholder="Type your answer here..."
                       className="mt-10 min-h-52 w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-5 text-base leading-7 outline-none placeholder:text-zinc-600 focus:border-white/25"
@@ -466,7 +505,9 @@ async function generateReport(
                       </button>
 
                       <button
-                        onClick={submitAnswer}
+                        onClick={
+                          submitAnswer
+                        }
                         disabled={
                           !answer.trim() ||
                           evaluating
@@ -484,7 +525,9 @@ async function generateReport(
                         ) : (
                           <>
                             Submit answer
-                            <ArrowRight size={17} />
+                            <ArrowRight
+                              size={17}
+                            />
                           </>
                         )}
                       </button>
@@ -492,25 +535,32 @@ async function generateReport(
                   </>
                 )}
 
+                {/* Evaluation */}
                 {evaluation && (
                   <div className="mt-10">
+                    {/* Score cards */}
                     <div className="grid gap-4 sm:grid-cols-4">
                       <ScoreCard
                         label="Overall"
-                        value={evaluation.score}
+                        value={
+                          evaluation.score
+                        }
                       />
+
                       <ScoreCard
                         label="Technical"
                         value={
                           evaluation.technicalAccuracy
                         }
                       />
+
                       <ScoreCard
                         label="Completeness"
                         value={
                           evaluation.completeness
                         }
                       />
+
                       <ScoreCard
                         label="Communication"
                         value={
@@ -519,12 +569,14 @@ async function generateReport(
                       />
                     </div>
 
+                    {/* Strengths / weaknesses */}
                     <div className="mt-6 grid gap-6 md:grid-cols-2">
                       <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
                         <div className="flex items-center gap-2">
                           <CheckCircle2
                             size={18}
                           />
+
                           <h2 className="font-medium">
                             Strengths
                           </h2>
@@ -547,6 +599,7 @@ async function generateReport(
                       <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
                         <div className="flex items-center gap-2">
                           <XCircle size={18} />
+
                           <h2 className="font-medium">
                             Areas to improve
                           </h2>
@@ -567,9 +620,11 @@ async function generateReport(
                       </div>
                     </div>
 
+                    {/* AI feedback */}
                     <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.025] p-6">
                       <div className="flex items-center gap-2">
                         <Target size={18} />
+
                         <h2 className="font-medium">
                           AI Feedback
                         </h2>
@@ -580,6 +635,7 @@ async function generateReport(
                       </p>
                     </div>
 
+                    {/* Follow-up focus */}
                     <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.025] p-6">
                       <p className="text-xs uppercase tracking-[0.2em] text-zinc-600">
                         Follow-up focus
@@ -590,6 +646,7 @@ async function generateReport(
                       </p>
                     </div>
 
+                    {/* Continue / final report */}
                     {!interviewComplete ? (
                       <button
                         onClick={
@@ -618,171 +675,279 @@ async function generateReport(
                         )}
                       </button>
                     ) : (
-                      <div className="mt-6 space-y-6">
-  {/* Overall score */}
-  <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-7 text-center md:p-10">
-    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-black">
-      <Sparkles size={24} />
-    </div>
+                      <div className="mt-6">
+                        {!report ? (
+                          /* Generate report state */
+                          <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6 text-center">
+                            <Sparkles
+                              size={22}
+                              className="mx-auto"
+                            />
 
-    <p className="mt-5 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-      Final interview report
-    </p>
+                            <h2 className="mt-4 text-xl font-medium">
+                              Interview complete
+                            </h2>
 
-    <div className="mt-3 text-6xl font-semibold tracking-tight">
-      {report!.overallScore.toFixed(1)}
-      <span className="text-2xl text-zinc-600">
-        /10
-      </span>
-    </div>
+                            <p className="mt-2 text-sm leading-6 text-zinc-500">
+                              Your answers have
+                              been evaluated.
+                              Generate your final
+                              AI interview report.
+                            </p>
 
-    <p className="mt-3 text-sm text-zinc-500">
-      Overall performance
-    </p>
-  </div>
+                            <button
+                              onClick={() =>
+                                generateReport(
+                                  finalEvaluation ??
+                                    evaluation ??
+                                    undefined
+                                )
+                              }
+                              disabled={
+                                generatingReport
+                              }
+                              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {generatingReport ? (
+                                <>
+                                  <Loader2
+                                    size={17}
+                                    className="animate-spin"
+                                  />
+                                  Generating final
+                                  report...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles
+                                    size={17}
+                                  />
+                                  Generate final
+                                  report
+                                  <ArrowRight
+                                    size={17}
+                                  />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          /* Final report */
+                          <div className="space-y-6">
+                            {/* Overall score */}
+                            <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-7 text-center md:p-10">
+                              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-black">
+                                <Sparkles
+                                  size={24}
+                                />
+                              </div>
 
-  {/* Score breakdown */}
-  <div className="grid gap-4 sm:grid-cols-3">
-    <ScoreCard
-      label="Technical"
-      value={report!.technicalScore}
-    />
+                              <p className="mt-5 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
+                                Final interview
+                                report
+                              </p>
 
-    <ScoreCard
-      label="Completeness"
-      value={report!.completenessScore}
-    />
+                              <div className="mt-3 text-6xl font-semibold tracking-tight">
+                                {report.overallScore.toFixed(
+                                  1
+                                )}
 
-    <ScoreCard
-      label="Communication"
-      value={report!.communicationScore}
-    />
-  </div>
+                                <span className="text-2xl text-zinc-600">
+                                  /10
+                                </span>
+                              </div>
 
-  {/* Strengths + improvements */}
-  <div className="grid gap-6 md:grid-cols-2">
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
-      <div className="flex items-center gap-2">
-        <CheckCircle2 size={18} />
+                              <p className="mt-3 text-sm text-zinc-500">
+                                Overall performance
+                              </p>
+                            </div>
 
-        <h2 className="font-medium">
-          Strengths
-        </h2>
-      </div>
+                            {/* Score breakdown */}
+                            <div className="grid gap-4 sm:grid-cols-3">
+                              <ScoreCard
+                                label="Technical"
+                                value={
+                                  report.technicalScore
+                                }
+                              />
 
-      <ul className="mt-5 space-y-4">
-        {report!.strengths.map((item, i) => (
-          <li
-            key={i}
-            className="flex gap-3 text-sm leading-6 text-zinc-400"
-          >
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+                              <ScoreCard
+                                label="Completeness"
+                                value={
+                                  report.completenessScore
+                                }
+                              />
 
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
-      <div className="flex items-center gap-2">
-        <XCircle size={18} />
+                              <ScoreCard
+                                label="Communication"
+                                value={
+                                  report.communicationScore
+                                }
+                              />
+                            </div>
 
-        <h2 className="font-medium">
-          Areas to improve
-        </h2>
-      </div>
+                            {/* Strengths / improvements */}
+                            <div className="grid gap-6 md:grid-cols-2">
+                              <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2
+                                    size={18}
+                                  />
 
-      <ul className="mt-5 space-y-4">
-        {report!.areasToImprove.map(
-          (item, i) => (
-            <li
-              key={i}
-              className="flex gap-3 text-sm leading-6 text-zinc-400"
-            >
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-500" />
-              <span>{item}</span>
-            </li>
-          )
-        )}
-      </ul>
-    </div>
-  </div>
+                                  <h2 className="font-medium">
+                                    Strengths
+                                  </h2>
+                                </div>
 
-  {/* Recommended practice */}
-  <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
-    <div className="flex items-center gap-2">
-      <Target size={18} />
+                                <ul className="mt-5 space-y-4">
+                                  {report.strengths.map(
+                                    (item, i) => (
+                                      <li
+                                        key={i}
+                                        className="flex gap-3 text-sm leading-6 text-zinc-400"
+                                      >
+                                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white" />
 
-      <h2 className="font-medium">
-        Recommended practice
-      </h2>
-    </div>
+                                        <span>
+                                          {item}
+                                        </span>
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              </div>
 
-    <div className="mt-5 grid gap-3 md:grid-cols-2">
-      {report!.recommendedPractice.map(
-        (item, i) => (
-          <div
-            key={i}
-            className="rounded-xl border border-white/10 bg-black/20 p-4"
-          >
-            <div className="flex gap-3">
-              <span className="text-sm text-zinc-600">
-                0{i + 1}
-              </span>
+                              <div className="rounded-2xl border border-white/10 bg-black/20 p-6">
+                                <div className="flex items-center gap-2">
+                                  <XCircle
+                                    size={18}
+                                  />
 
-              <span className="text-sm leading-6 text-zinc-400">
-                {item}
-              </span>
-            </div>
-          </div>
-        )
-      )}
-    </div>
-  </div>
+                                  <h2 className="font-medium">
+                                    Areas to improve
+                                  </h2>
+                                </div>
 
-  {/* AI summary */}
-  <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
-    <div className="flex items-center gap-2">
-      <BrainCircuit size={18} />
+                                <ul className="mt-5 space-y-4">
+                                  {report.areasToImprove.map(
+                                    (item, i) => (
+                                      <li
+                                        key={i}
+                                        className="flex gap-3 text-sm leading-6 text-zinc-400"
+                                      >
+                                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-500" />
 
-      <h2 className="font-medium">
-        AI summary
-      </h2>
-    </div>
+                                        <span>
+                                          {item}
+                                        </span>
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              </div>
+                            </div>
 
-    <p className="mt-4 text-sm leading-7 text-zinc-400">
-      {report!.summary}
-    </p>
-  </div>
+                            {/* Recommended practice */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
+                              <div className="flex items-center gap-2">
+                                <Target size={18} />
 
-  {/* Finish */}
-  <div className="pt-2 text-center">
-    <button
-      onClick={() => window.location.reload()}
-      className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.05]"
-    >
-      Start another interview
-      <ArrowRight size={16} />
-    </button>
-  </div>
-</div>
+                                <h2 className="font-medium">
+                                  Recommended
+                                  practice
+                                </h2>
+                              </div>
+
+                              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                                {report.recommendedPractice.map(
+                                  (item, i) => (
+                                    <div
+                                      key={i}
+                                      className="rounded-xl border border-white/10 bg-black/20 p-4"
+                                    >
+                                      <div className="flex gap-3">
+                                        <span className="text-sm text-zinc-600">
+                                          {String(
+                                            i + 1
+                                          ).padStart(
+                                            2,
+                                            "0"
+                                          )}
+                                        </span>
+
+                                        <span className="text-sm leading-6 text-zinc-400">
+                                          {item}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+
+                            {/* AI summary */}
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
+                              <div className="flex items-center gap-2">
+                                <BrainCircuit
+                                  size={18}
+                                />
+
+                                <h2 className="font-medium">
+                                  AI summary
+                                </h2>
+                              </div>
+
+                              <p className="mt-4 text-sm leading-7 text-zinc-400">
+                                {report.summary}
+                              </p>
+                            </div>
+
+                            {/* Finish */}
+                            <div className="pt-2 text-center">
+                              <button
+                                onClick={() =>
+                                  window.location.reload()
+                                }
+                                className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.05]"
+                              >
+                                Start another
+                                interview
+                                <ArrowRight
+                                  size={16}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
               </>
-            ) : null}
+            ) : (
+              <div className="py-16 text-center">
+                <p className="text-sm text-zinc-500">
+                  Preparing interview...
+                </p>
+              </div>
+            )}
           </section>
         </div>
       </main>
     );
   }
 
+  /* Landing page */
   return (
     <main className="min-h-screen overflow-hidden bg-[#08090b]">
       <div className="mx-auto max-w-6xl px-5 py-7 md:px-10">
+        {/* Navigation */}
         <nav className="flex items-center justify-between">
           <div className="text-xl font-semibold tracking-tight">
-            interva<span className="text-zinc-500">.</span>
+            interva
+            <span className="text-zinc-500">
+              .
+            </span>
           </div>
 
           <span className="text-sm text-zinc-500">
@@ -790,6 +955,7 @@ async function generateReport(
           </span>
         </nav>
 
+        {/* Hero */}
         <section className="relative py-24 md:py-32">
           <div className="absolute left-1/2 top-12 -z-0 h-72 w-72 -translate-x-1/2 rounded-full bg-white/[0.035] blur-3xl" />
 
@@ -802,19 +968,21 @@ async function generateReport(
             <h1 className="text-5xl font-semibold tracking-[-0.04em] md:text-7xl">
               Your next interview
               <br />
+
               <span className="text-zinc-500">
                 starts here.
               </span>
             </h1>
 
             <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-zinc-400 md:text-lg">
-              Interva simulates realistic technical and
-              behavioral interviews, adapts to your answers,
-              and turns every session into actionable
-              feedback.
+              Interva simulates realistic technical
+              and behavioral interviews, adapts to
+              your answers, and turns every session
+              into actionable feedback.
             </p>
           </div>
 
+          {/* Interview configuration */}
           <div className="mx-auto mt-12 max-w-2xl rounded-3xl border border-white/10 bg-white/[0.035] p-5 md:p-7">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="text-sm text-zinc-400">
@@ -830,12 +998,15 @@ async function generateReport(
                   <option>
                     Software Engineer
                   </option>
+
                   <option>
                     Backend Engineer
                   </option>
+
                   <option>
                     Data Analyst
                   </option>
+
                   <option>
                     Data Scientist
                   </option>
@@ -848,7 +1019,9 @@ async function generateReport(
                 <select
                   value={difficulty}
                   onChange={(e) =>
-                    setDifficulty(e.target.value)
+                    setDifficulty(
+                      e.target.value
+                    )
                   }
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
                 >
@@ -882,10 +1055,11 @@ async function generateReport(
           </div>
         </section>
 
+        {/* Features */}
         <section className="grid gap-4 border-t border-white/10 py-12 md:grid-cols-3">
           {features.map(
-            ([Icon, title, desc]) => {
-              const I =
+            ([Icon, title, description]) => {
+              const FeatureIcon =
                 Icon as typeof BrainCircuit;
 
               return (
@@ -893,14 +1067,14 @@ async function generateReport(
                   key={title as string}
                   className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"
                 >
-                  <I size={20} />
+                  <FeatureIcon size={20} />
 
                   <h2 className="mt-5 font-medium">
                     {title as string}
                   </h2>
 
                   <p className="mt-2 text-sm leading-6 text-zinc-500">
-                    {desc as string}
+                    {description as string}
                   </p>
                 </div>
               );
@@ -927,6 +1101,7 @@ function ScoreCard({
 
       <div className="mt-2 text-3xl font-semibold">
         {value}
+
         <span className="text-sm text-zinc-600">
           /10
         </span>
